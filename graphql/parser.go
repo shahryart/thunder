@@ -103,6 +103,10 @@ func parseSelectionSet(input *ast.SelectionSet, globalFragments map[string]*Frag
 				alias = selection.Alias.Value
 			}
 
+			if !shouldIncludeNode(selection.Directives, vars) {
+				continue
+			}
+
 			if len(selection.Directives) != 0 {
 				return nil, NewClientError("directives not supported")
 			}
@@ -162,6 +166,46 @@ func parseSelectionSet(input *ast.SelectionSet, globalFragments map[string]*Frag
 		Fragments:  fragments,
 	}
 	return selectionSet, nil
+}
+
+func findDirectiveWithName(directives []*ast.Directive, name string) *ast.Directive {
+	var found *ast.Directive
+	for _, directive := range directives {
+		if directive.Name.Value == name {
+			found = directive
+		}
+	}
+	return found
+}
+
+func shouldIncludeNode(directives []*ast.Directive, vars map[string]interface{}) (bool, error) {
+	skipDirective := findDirectiveWithName(directives, "skip")
+	if skipDirective != nil {
+		values, err := argsToJson(skipDirective.Arguments, vars)
+		if err != nil {
+			return false, err
+		}
+		args := values.(map[string]interface{})
+
+		if args["if"] == true {
+			return false, nil
+		}
+	}
+
+	includeDirective := findDirectiveWithName(directives, "include")
+	if includeDirective != nil {
+		values, err := argsToJson(includeDirective.Arguments, vars)
+		if err != nil {
+			return false, err
+		}
+		args := values.(map[string]interface{})
+
+		if args["if"] == false {
+			return false, nil
+		}
+	}
+
+	return true, nil
 }
 
 type visitState int
