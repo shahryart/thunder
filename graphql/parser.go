@@ -103,12 +103,10 @@ func parseSelectionSet(input *ast.SelectionSet, globalFragments map[string]*Frag
 				alias = selection.Alias.Value
 			}
 
-			if !shouldIncludeNode(selection.Directives, vars) {
+			if ok, err := shouldIncludeNode(selection.Directives, vars); err != nil {
+				return nil, err
+			} else if !ok {
 				continue
-			}
-
-			if len(selection.Directives) != 0 {
-				return nil, NewClientError("directives not supported")
 			}
 
 			args, err := argsToJson(selection.Arguments, vars)
@@ -131,8 +129,10 @@ func parseSelectionSet(input *ast.SelectionSet, globalFragments map[string]*Frag
 		case *ast.FragmentSpread:
 			name := selection.Name.Value
 
-			if len(selection.Directives) != 0 {
-				return nil, NewClientError("directives not supported")
+			if ok, err := shouldIncludeNode(selection.Directives, vars); err != nil {
+				return nil, err
+			} else if !ok {
+				continue
 			}
 
 			fragment, found := globalFragments[name]
@@ -145,8 +145,10 @@ func parseSelectionSet(input *ast.SelectionSet, globalFragments map[string]*Frag
 		case *ast.InlineFragment:
 			on := selection.TypeCondition.Name.Value
 
-			if len(selection.Directives) != 0 {
-				return nil, NewClientError("directives not supported")
+			if ok, err := shouldIncludeNode(selection.Directives, vars); err != nil {
+				return nil, err
+			} else if !ok {
+				continue
 			}
 
 			selectionSet, err := parseSelectionSet(selection.SelectionSet, globalFragments, vars)
@@ -187,6 +189,14 @@ func shouldIncludeNode(directives []*ast.Directive, vars map[string]interface{})
 		}
 		args := values.(map[string]interface{})
 
+		if args["if"] == nil {
+			return false, NewClientError("required argument not provided: if")
+		}
+
+		if _, ok := args["if"].(bool); !ok {
+			return false, NewClientError("expected type boolean, found %v", args["if"])
+		}
+
 		if args["if"] == true {
 			return false, nil
 		}
@@ -199,6 +209,14 @@ func shouldIncludeNode(directives []*ast.Directive, vars map[string]interface{})
 			return false, err
 		}
 		args := values.(map[string]interface{})
+
+		if args["if"] == nil {
+			return false, NewClientError("required argument not provided: if")
+		}
+
+		if _, ok := args["if"].(bool); !ok {
+			return false, NewClientError("expected type boolean, found %v", args["if"])
+		}
 
 		if args["if"] == false {
 			return false, nil
