@@ -294,3 +294,75 @@ query Operation($x: int64 = 2) {
 		t.Errorf("expected 2, received %v", val)
 	}
 }
+
+func TestSkipDirective(t *testing.T) {
+	// Variable skip
+	query, err := Parse(`
+		query x {
+			y @skip(if: $var)
+		}`, map[string]interface{}{"var": true})
+
+	if err != nil {
+		t.Errorf("expected no error, but received: %s", err.Error())
+	}
+
+	if query.SelectionSet.Selections != nil {
+		t.Errorf("expected no selections, but received %v", query.SelectionSet.Selections)
+	}
+
+	// Wrong type
+	query, err = Parse(`
+		query x {
+			y @skip(if: $var)
+		}`, map[string]interface{}{"var": 5})
+
+	if err == nil || err.Error() != "expected type boolean, found 5" {
+		t.Errorf("expected error for wrong type, but received: %s", err.Error())
+	}
+
+	// Missing if
+	query, err = Parse(`
+		query x {
+			y @skip
+		}`, map[string]interface{}{})
+
+	if err == nil || err.Error() != "required argument not provided: if" {
+		t.Errorf("expected error for wrong type, but received: %s", err.Error())
+	}
+}
+
+func TestIncludeDirective(t *testing.T) {
+	// Variable skip
+	query, err := Parse(`
+		query x {
+			y @include(if: $var)
+		}`, map[string]interface{}{"var": true})
+
+	if err != nil {
+		t.Errorf("expected no error, but received: %s", err.Error())
+	}
+
+	if len(query.SelectionSet.Selections) != 1 {
+		t.Errorf("expected 1 selection, but received %v", query.SelectionSet.Selections)
+	}
+
+	// Wrong type
+	query, err = Parse(`
+		query x {
+			y @include(if: $var)
+		}`, map[string]interface{}{"var": 5})
+
+	if err == nil || err.Error() != "expected type boolean, found 5" {
+		t.Errorf("expected error for wrong type, but received: %s", err.Error())
+	}
+
+	// Missing if
+	query, err = Parse(`
+		query x {
+			y @include
+		}`, map[string]interface{}{})
+
+	if err == nil || err.Error() != "required argument not provided: if" {
+		t.Errorf("expected error for wrong type, but received: %s", err.Error())
+	}
+}
