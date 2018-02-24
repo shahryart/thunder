@@ -271,10 +271,35 @@ type QueryExecer interface {
 	Exec(query string, args ...interface{}) (sql.Result, error)
 }
 
+type queryExecerContext interface {
+	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+	QueryRowContext(ctx context.Context, query string, args ...interface{}) *sql.Row
+	ExecContext(ctx context.Context, query string, args ...interface{}) (sql.Result, error)
+}
+
+type ctxBoundQueryExecer struct {
+	queryExecerContext
+	ctx context.Context
+}
+
+var _ QueryExecer = &ctxBoundQueryExecer{}
+
+func (e *ctxBoundQueryExecer) Query(query string, args ...interface{}) (*sql.Rows, error) {
+	return e.queryExecerContext.QueryContext(e.ctx, query, args...)
+}
+
+func (e *ctxBoundQueryExecer) QueryRow(query string, args ...interface{}) *sql.Row {
+	return e.queryExecerContext.QueryRowContext(e.ctx, query, args...)
+}
+
+func (e *ctxBoundQueryExecer) Exec(query string, args ...interface{}) (sql.Result, error) {
+	return e.queryExecerContext.ExecContext(e.ctx, query, args...)
+}
+
 func (db *DB) QueryExecer(ctx context.Context) QueryExecer {
 	maybeTx := ctx.Value(txKey{db: db})
 	if maybeTx != nil {
-		return maybeTx.(*sql.Tx)
+		return &ctxBoundQueryExecer{queryExecerContext: maybeTx.(*sql.Tx), ctx: ctx}
 	}
-	return db.Conn
+	return &ctxBoundQueryExecer{queryExecerContext: db.Conn, ctx: ctx}
 }
