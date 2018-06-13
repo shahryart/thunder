@@ -2,7 +2,6 @@ package graphql_test
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"sync"
 	"testing"
@@ -36,14 +35,14 @@ func TestPathError(t *testing.T) {
 
 	query := schema.Query()
 	query.FieldFunc("inner", func(args struct {
-		EnumField int32
-	}) Inner {
-		return Inner{}
+		EnumField int32 //will be parsed as the type that gets passed in here
+	}) int32 {
+		return args.EnumField
 	})
 	query.RegEnum("enumField", map[string]interface{}{
-		"firstField":  1,
-		"secondField": 2,
-		"thirdField":  3,
+		"firstField":  int32(1),
+		"secondField": int32(2),
+		"thirdField":  int32(3),
 	})
 	query.FieldFunc("safe", func() error {
 		return graphql.NewSafeError("safe safe")
@@ -53,29 +52,11 @@ func TestPathError(t *testing.T) {
 
 	type Expensive struct{}
 
-	inner := schema.Object("inner", Inner{})
-
-	inner.FieldFunc("expensive", func(ctx context.Context) Expensive {
-		return Expensive{}
-	})
-	inner.FieldFunc("inners", func(ctx context.Context) []Inner {
-		return []Inner{Inner{}}
-	})
-
-	nested := schema.Object("expensive", Expensive{})
-	nested.FieldFunc("expensives", func(ctx context.Context) []Expensive {
-		return []Expensive{Expensive{}}
-	})
-
-	nested.FieldFunc("err", func() error {
-		return errors.New("no good, bad")
-	})
-
 	builtSchema := schema.MustBuild()
 
 	q2 := graphql.MustParse(`
 		{
-			inner(enumField: firstField) { inners { expensive { expensives { err } } } }
+			inner(enumField: firstField)
 		}
 		`, nil)
 	if err := graphql.PrepareQuery(builtSchema.Query, q2.SelectionSet); err != nil {
@@ -91,10 +72,14 @@ func TestPathError(t *testing.T) {
 	// 	t.Error(err)
 	// }
 
-	// e := graphql.Executor{}
-	// _, err := e.Execute(context.Background(), builtSchema.Query, nil, q)
-	// if err == nil || err.Error() != "inner.inners.0.expensive.expensives.0.err: no good, bad" {
-	// 	t.Errorf("bad error: %v", err)
+	e := graphql.Executor{}
+	val, err := e.Execute(context.Background(), builtSchema.Query, nil, q2)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]interface{}{
+		"inner": int32(1),
+	}, val)
+	// if err != nil || val != int32(1) {
+	// 	t.Errorf("bad error: %v %v", err, val)
 	// }
 
 	// q = graphql.MustParse(`

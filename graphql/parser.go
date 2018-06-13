@@ -1,6 +1,7 @@
 package graphql
 
 import (
+	"log"
 	"reflect"
 	"strconv"
 
@@ -34,6 +35,7 @@ func valueToJson(value ast.Value, vars map[string]interface{}) (interface{}, err
 	case *ast.BooleanValue:
 		return value.Value, nil
 	case *ast.EnumValue:
+		//BOX IT UP HERE (SAME AS THE BOX THAT GETS THE TYPE IN FIELD FUNC)
 		return value.Value, nil
 	case *ast.Variable:
 		actual, ok := vars[value.Name.Value]
@@ -414,7 +416,7 @@ func Parse(source string, vars map[string]interface{}) (*Query, error) {
 			if err != nil {
 				return rv, NewClientError("failed to parse default value: %s", err.Error())
 			}
-
+			log.Println(name, val)
 			defaultedVars[name] = val
 		}
 	}

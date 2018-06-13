@@ -1,7 +1,5 @@
 package schemabuilder
 
-import "log"
-
 // A Object represents a Go type and set of methods to be converted into an
 // Object in a GraphQL schema.
 type Object struct {
@@ -12,10 +10,6 @@ type Object struct {
 	EnumMappings map[string]map[string]interface{}
 
 	key string
-}
-
-type Enum struct {
-	Name string
 }
 
 // FieldFuncOption is an interface for the variadic options that can be passed
@@ -66,7 +60,6 @@ func (s *Object) RegEnum(name string, mapping map[string]interface{}) {
 	if s.EnumMappings == nil {
 		s.EnumMappings = make(map[string]map[string]interface{})
 	}
-	log.Println("create mapping for", name)
 	s.EnumMappings[name] = mapping
 }
 

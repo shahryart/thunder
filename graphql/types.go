@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 	"fmt"
+	"reflect"
 )
 
 // Type represents a GraphQL type, and should be either an Object, a Scalar,
@@ -19,6 +20,8 @@ type Type interface {
 type Scalar struct {
 	Type string
 }
+
+//enum type here
 
 func (s *Scalar) isType() {}
 
@@ -96,8 +99,16 @@ type Field struct {
 }
 
 type Schema struct {
-	Query    Type
-	Mutation Type
+	Query     Type
+	Mutation  Type
+	EnumTypes map[reflect.Type]map[string]interface{}
+}
+
+func (s *Schema) RegEnum(typ reflect.Type, enumMap map[string]interface{}) { //could be a type or a value
+	if s.EnumTypes == nil {
+		s.EnumTypes = make(map[reflect.Type]map[string]interface{})
+	}
+	s.EnumTypes[typ] = enumMap
 }
 
 // SelectionSet represents a core GraphQL query

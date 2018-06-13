@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"sort"
 	"strings"
@@ -178,8 +177,6 @@ func getEnumArgParser(name string, typ reflect.Type, enumMappings map[string]map
 		if !ok {
 			return errors.New("not a string")
 		}
-		log.Println(name)
-		log.Println(asString)
 		val, ok := enumMappings[name][asString]
 		if !ok {
 			return errors.New("not an enum")
@@ -220,9 +217,6 @@ func makeArgParser(name string, typ reflect.Type, enumMappings map[string]map[st
 }
 
 func makeArgParserInner(name string, typ reflect.Type, enumMappings map[string]map[string]interface{}) (*argParser, graphql.Type, error) {
-	log.Println(name)
-	log.Println(enumMappings)
-	log.Println(enumMappings[name])
 	if enumMappings[name] != nil {
 		return getEnumArgParser(name, typ, enumMappings)
 	}
@@ -315,7 +309,6 @@ func makeStructParser(typ reflect.Type, enumMappings map[string]map[string]inter
 		if _, ok := fields[name]; ok {
 			return nil, nil, fmt.Errorf("bad arg type %s: duplicate field %s", typ, name)
 		}
-		log.Println(name, "right here")
 		parser, fieldArgTyp, err := makeArgParser(name, field.Type, enumMappings)
 		if err != nil {
 			return nil, nil, err
@@ -445,9 +438,6 @@ func (sb *schemaBuilder) buildFunction(typ reflect.Type, m *method) (*graphql.Fi
 	if len(in) > 0 && in[0] != selectionSetType {
 		hasArgs = true
 		var err error
-		for mapkey, _ := range sb.getEnumMappings() {
-			log.Println("map key is", mapkey)
-		}
 		if argParser, argType, err = makeStructParser(in[0], sb.getEnumMappings()); err != nil {
 			return nil, fmt.Errorf("attempted to parse %s as arguments struct, but failed: %s", in[0].Name(), err.Error())
 		}
@@ -725,7 +715,6 @@ var scalars = map[reflect.Type]string{
 	reflect.TypeOf(string("")):  "string",
 	reflect.TypeOf(time.Time{}): "Time",
 	reflect.TypeOf([]byte{}):    "bytes",
-	reflect.TypeOf(Enum{}):      "Enum",
 }
 
 func getScalar(typ reflect.Type) (string, bool) {
