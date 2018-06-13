@@ -33,13 +33,15 @@ func TestPathError(t *testing.T) {
 		enumField enumFieldType
 	}
 
+	type enumType int32
 	query := schema.Query()
+	var enumVar enumType
 	query.FieldFunc("inner", func(args struct {
-		EnumField int32 //will be parsed as the type that gets passed in here
-	}) int32 {
+		EnumField enumType //will be parsed as the type that gets passed in here
+	}) enumType {
 		return args.EnumField
 	})
-	query.RegEnum("enumField", map[string]interface{}{
+	schema.RegEnum(reflect.TypeOf(enumVar), map[string]interface{}{
 		"firstField":  int32(1),
 		"secondField": int32(2),
 		"thirdField":  int32(3),
@@ -76,7 +78,7 @@ func TestPathError(t *testing.T) {
 	val, err := e.Execute(context.Background(), builtSchema.Query, nil, q2)
 	assert.Nil(t, err)
 	assert.Equal(t, map[string]interface{}{
-		"inner": int32(1),
+		"inner": enumType(1),
 	}, val)
 	// if err != nil || val != int32(1) {
 	// 	t.Errorf("bad error: %v %v", err, val)

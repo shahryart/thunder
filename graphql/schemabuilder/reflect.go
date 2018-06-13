@@ -170,14 +170,14 @@ func getScalarArgParser(typ reflect.Type) (*argParser, graphql.Type, bool) {
 	return nil, nil, false
 }
 
-func getEnumArgParser(name string, typ reflect.Type, enumMappings map[string]map[string]interface{}) (*argParser, graphql.Type, error) {
+func (sb *schemaBuilder) getEnumArgParser(typ reflect.Type) (*argParser, graphql.Type, error) {
 
 	return &argParser{FromJSON: func(value interface{}, dest reflect.Value) error {
 		asString, ok := value.(string)
 		if !ok {
 			return errors.New("not a string")
 		}
-		val, ok := enumMappings[name][asString]
+		val, ok := sb.enumMappings[typ][asString]
 		if !ok {
 			return errors.New("not an enum")
 		}
@@ -200,25 +200,27 @@ type argField struct {
 }
 
 //enummappings could be wrapped into schema info or something
-func makeArgParser(name string, typ reflect.Type, enumMappings map[string]map[string]interface{}) (*argParser, graphql.Type, error) {
+func (sb *schemaBuilder) makeArgParser(typ reflect.Type) (*argParser, graphql.Type, error) {
 	if typ.Kind() == reflect.Ptr {
-		parser, argType, err := makeArgParserInner(name, typ.Elem(), enumMappings)
+		parser, argType, err := sb.makeArgParserInner(typ.Elem())
 		if err != nil {
 			return nil, nil, err
 		}
 		return wrapPtrParser(parser), argType, nil
 	}
 
-	parser, argType, err := makeArgParserInner(name, typ, enumMappings)
+	parser, argType, err := sb.makeArgParserInner(typ)
 	if err != nil {
 		return nil, nil, err
 	}
 	return parser, &graphql.NonNull{Type: argType}, nil
 }
 
-func makeArgParserInner(name string, typ reflect.Type, enumMappings map[string]map[string]interface{}) (*argParser, graphql.Type, error) {
-	if enumMappings[name] != nil {
-		return getEnumArgParser(name, typ, enumMappings)
+func (sb *schemaBuilder) makeArgParserInner(typ reflect.Type) (*argParser, graphql.Type, error) {
+	//ENUM PARSER HEREEEEEEEEEEEE
+	if sb.enumMappings[typ] != nil {
+		parser, argType, err := sb.getEnumArgParser(typ)
+		return parser, argType, err
 	}
 	if parser, argType, ok := getScalarArgParser(typ); ok {
 		return parser, argType, nil
@@ -226,7 +228,7 @@ func makeArgParserInner(name string, typ reflect.Type, enumMappings map[string]m
 
 	switch typ.Kind() {
 	case reflect.Struct:
-		parser, argType, err := makeStructParser(typ, enumMappings)
+		parser, argType, err := sb.makeStructParser(typ)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -235,7 +237,7 @@ func makeArgParserInner(name string, typ reflect.Type, enumMappings map[string]m
 		}
 		return parser, argType, nil
 	case reflect.Slice:
-		return makeSliceParser(name, typ, enumMappings)
+		return sb.makeSliceParser(typ)
 	default:
 		return nil, nil, fmt.Errorf("bad arg type %s: should be struct, scalar, pointer, or a slice", typ)
 	}
@@ -260,7 +262,7 @@ func wrapPtrParser(inner *argParser) *argParser {
 	}
 }
 
-func makeStructParser(typ reflect.Type, enumMappings map[string]map[string]interface{}) (*argParser, graphql.Type, error) {
+func (sb *schemaBuilder) makeStructParser(typ reflect.Type) (*argParser, graphql.Type, error) {
 
 	fields := make(map[string]argField)
 	argType := &graphql.InputObject{
@@ -309,7 +311,7 @@ func makeStructParser(typ reflect.Type, enumMappings map[string]map[string]inter
 		if _, ok := fields[name]; ok {
 			return nil, nil, fmt.Errorf("bad arg type %s: duplicate field %s", typ, name)
 		}
-		parser, fieldArgTyp, err := makeArgParser(name, field.Type, enumMappings)
+		parser, fieldArgTyp, err := sb.makeArgParser(field.Type)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -348,8 +350,8 @@ func makeStructParser(typ reflect.Type, enumMappings map[string]map[string]inter
 	}, argType, nil
 }
 
-func makeSliceParser(name string, typ reflect.Type, enumMappings map[string]map[string]interface{}) (*argParser, graphql.Type, error) {
-	inner, argType, err := makeArgParser(name, typ.Elem(), enumMappings)
+func (sb *schemaBuilder) makeSliceParser(typ reflect.Type) (*argParser, graphql.Type, error) {
+	inner, argType, err := sb.makeArgParser(typ.Elem())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -376,8 +378,9 @@ func makeSliceParser(name string, typ reflect.Type, enumMappings map[string]map[
 }
 
 type schemaBuilder struct {
-	types   map[reflect.Type]graphql.Type
-	objects map[reflect.Type]*Object
+	types        map[reflect.Type]graphql.Type
+	objects      map[reflect.Type]*Object
+	enumMappings map[reflect.Type]map[string]interface{}
 }
 
 var errType reflect.Type
@@ -391,18 +394,6 @@ func init() {
 	contextType = reflect.TypeOf(&context).Elem()
 	var selectionSet *graphql.SelectionSet
 	selectionSetType = reflect.TypeOf(selectionSet)
-}
-
-func (sb *schemaBuilder) getEnumMappings() map[string]map[string]interface{} {
-	mapping := make(map[string]map[string]interface{})
-	for _, obj := range sb.objects {
-		for name, enumMap := range obj.EnumMappings {
-			if obj.EnumMappings != nil {
-				mapping[name] = enumMap
-			}
-		}
-	}
-	return mapping
 }
 
 func (sb *schemaBuilder) buildFunction(typ reflect.Type, m *method) (*graphql.Field, error) {
@@ -438,7 +429,7 @@ func (sb *schemaBuilder) buildFunction(typ reflect.Type, m *method) (*graphql.Fi
 	if len(in) > 0 && in[0] != selectionSetType {
 		hasArgs = true
 		var err error
-		if argParser, argType, err = makeStructParser(in[0], sb.getEnumMappings()); err != nil {
+		if argParser, argType, err = sb.makeStructParser(in[0]); err != nil {
 			return nil, fmt.Errorf("attempted to parse %s as arguments struct, but failed: %s", in[0].Name(), err.Error())
 		}
 		in = in[1:]
@@ -772,7 +763,15 @@ func (sb *schemaBuilder) getType(t reflect.Type) (graphql.Type, error) {
 }
 
 type Schema struct {
-	objects map[string]*Object
+	objects   map[string]*Object
+	EnumTypes map[reflect.Type]map[string]interface{}
+}
+
+func (s *Schema) RegEnum(typ reflect.Type, enumMap map[string]interface{}) { //could be a type or a value
+	if s.EnumTypes == nil {
+		s.EnumTypes = make(map[reflect.Type]map[string]interface{})
+	}
+	s.EnumTypes[typ] = enumMap
 }
 
 func NewSchema() *Schema {
@@ -810,8 +809,9 @@ func (s *Schema) Mutation() *Object {
 
 func (s *Schema) Build() (*graphql.Schema, error) {
 	sb := &schemaBuilder{
-		types:   make(map[reflect.Type]graphql.Type),
-		objects: make(map[reflect.Type]*Object),
+		types:        make(map[reflect.Type]graphql.Type),
+		objects:      make(map[reflect.Type]*Object),
+		enumMappings: s.EnumTypes,
 	}
 
 	for _, object := range s.objects {

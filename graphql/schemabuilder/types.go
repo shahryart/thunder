@@ -3,11 +3,10 @@ package schemabuilder
 // A Object represents a Go type and set of methods to be converted into an
 // Object in a GraphQL schema.
 type Object struct {
-	Name         string // Optional, defaults to Type's name.
-	Description  string
-	Type         interface{}
-	Methods      Methods // Deprecated, use FieldFunc instead.
-	EnumMappings map[string]map[string]interface{}
+	Name        string // Optional, defaults to Type's name.
+	Description string
+	Type        interface{}
+	Methods     Methods // Deprecated, use FieldFunc instead.
 
 	key string
 }
@@ -54,13 +53,6 @@ func (s *Object) FieldFunc(name string, f interface{}, options ...FieldFuncOptio
 		panic("duplicate method")
 	}
 	s.Methods[name] = m
-}
-
-func (s *Object) RegEnum(name string, mapping map[string]interface{}) {
-	if s.EnumMappings == nil {
-		s.EnumMappings = make(map[string]map[string]interface{})
-	}
-	s.EnumMappings[name] = mapping
 }
 
 func (s *Object) Key(f string) {
