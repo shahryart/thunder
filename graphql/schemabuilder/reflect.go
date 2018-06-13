@@ -183,7 +183,8 @@ func (sb *schemaBuilder) getEnumArgParser(typ reflect.Type) (*argParser, graphql
 		}
 		dest.Set(reflect.ValueOf(val).Convert(dest.Type()))
 		return nil
-	}}, &graphql.Scalar{Type: reflect.TypeOf(sb.enumMappings[typ]).Elem().Name()}, nil
+	}}, &graphql.Enum{Type: typ.Name()}, nil
+	//&graphql.Scalar{Type: reflect.TypeOf(sb.enumMappings[typ]).Elem().Name()}, nil
 
 }
 
@@ -718,9 +719,20 @@ func getScalar(typ reflect.Type) (string, bool) {
 	return "", false
 }
 
+func (sb *schemaBuilder) getEnum(typ reflect.Type) (string, bool) {
+	if sb.enumMappings[typ] != nil {
+		return typ.Name(), true
+	}
+	return "", false
+}
+
 func (sb *schemaBuilder) getType(t reflect.Type) (graphql.Type, error) {
 	// Support scalars and optional scalars. Scalars have precedence over structs
 	// to have eg. time.Time function as a scalar.
+	if typ, ok := sb.getEnum(t); ok {
+		return &graphql.NonNull{Type: &graphql.Enum{Type: typ}}, nil
+	}
+
 	if typ, ok := getScalar(t); ok {
 		return &graphql.NonNull{Type: &graphql.Scalar{Type: typ}}, nil
 	}
