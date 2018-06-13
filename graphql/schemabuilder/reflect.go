@@ -183,7 +183,7 @@ func (sb *schemaBuilder) getEnumArgParser(typ reflect.Type) (*argParser, graphql
 		}
 		dest.Set(reflect.ValueOf(val).Convert(dest.Type()))
 		return nil
-	}}, &graphql.Scalar{Type: "int32"}, nil
+	}}, &graphql.Scalar{Type: reflect.TypeOf(sb.enumMappings[typ]).Elem().Name()}, nil
 
 }
 
@@ -217,11 +217,12 @@ func (sb *schemaBuilder) makeArgParser(typ reflect.Type) (*argParser, graphql.Ty
 }
 
 func (sb *schemaBuilder) makeArgParserInner(typ reflect.Type) (*argParser, graphql.Type, error) {
-	//ENUM PARSER HEREEEEEEEEEEEE
+
 	if sb.enumMappings[typ] != nil {
-		parser, argType, err := sb.getEnumArgParser(typ)
-		return parser, argType, err
+		parser, argType, _ := sb.getEnumArgParser(typ)
+		return parser, argType, nil
 	}
+
 	if parser, argType, ok := getScalarArgParser(typ); ok {
 		return parser, argType, nil
 	}
