@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/samsarahq/thunder/graphql/introspection"
@@ -16,9 +15,14 @@ type User struct {
 	MaybeAge *int64
 }
 
+type enumType int32
+
 func makeSchema() *schemabuilder.Schema {
 	schema := schemabuilder.NewSchema()
-
+	var enumField enumType
+	schema.EnumReg(enumField, map[string]interface{}{
+		"random": enumType(1),
+	})
 	query := schema.Query()
 	query.FieldFunc("me", func() User {
 		return User{Name: "me"}
@@ -42,8 +46,9 @@ func makeSchema() *schemabuilder.Schema {
 		return nil
 	})
 	user.FieldFunc("greet", func(args struct {
-		Other   string
-		Include *User
+		Other     string
+		Include   *User
+		Enumfield enumType
 	}) string {
 		return ""
 	})
@@ -68,6 +73,7 @@ func TestComputeSchemaJSON(t *testing.T) {
 		ioutil.WriteFile("test-schema.json", actualBytes, 0644)
 	}
 
+	ioutil.WriteFile("test-schema2.json", actualBytes, 0644)
 	expectedBytes, err := ioutil.ReadFile("test-schema.json")
 	if err != nil {
 		t.Fatal(err)
@@ -75,7 +81,7 @@ func TestComputeSchemaJSON(t *testing.T) {
 	var expected map[string]interface{}
 	json.Unmarshal(expectedBytes, &expected)
 
-	if !reflect.DeepEqual(expected, actual) {
-		t.Errorf("schema JSONs do not match:\n---expected---\n%+v\n---actual---\n%+v", expected, actual)
-	}
+	//if !reflect.DeepEqual(expected, actual) {
+	t.Errorf("schema JSONs do not match:\n---expected---\n%+v\n---actual---\n%+v", expected, actual)
+	//}
 }

@@ -2,7 +2,6 @@ package graphql_test
 
 import (
 	"context"
-	"errors"
 	"reflect"
 	"sync"
 	"testing"
@@ -29,13 +28,32 @@ type Slow struct {
 func TestPathError(t *testing.T) {
 	schema := schemabuilder.NewSchema()
 
-	type Inner struct{}
+	type enumType int32
+	type enumType2 float64
 
-	query := schema.Query()
-	query.FieldFunc("inner", func() Inner {
-		return Inner{}
+	schema.EnumReg(enumType(1), map[string]interface{}{
+		"firstField":  enumType(1),
+		"secondField": enumType(2),
+		"thirdField":  enumType(3),
+	})
+	schema.EnumReg(enumType2(1.2), map[string]interface{}{
+		"this": enumType2(1.2),
+		"is":   enumType2(3.2),
+		"a":    enumType2(4.3),
+		"map":  enumType2(5.3),
 	})
 
+	query := schema.Query()
+	query.FieldFunc("inner", func(args struct {
+		EnumField enumType //will be parsed as the type that gets passed in here
+	}) enumType {
+		return args.EnumField
+	})
+	query.FieldFunc("inner2", func(args struct {
+		EnumField2 enumType2
+	}) enumType2 {
+		return args.EnumField2
+	})
 	query.FieldFunc("safe", func() error {
 		return graphql.NewSafeError("safe safe")
 	})
@@ -44,57 +62,78 @@ func TestPathError(t *testing.T) {
 
 	type Expensive struct{}
 
-	inner := schema.Object("inner", Inner{})
-	inner.FieldFunc("expensive", func(ctx context.Context) Expensive {
-		return Expensive{}
-	})
-	inner.FieldFunc("inners", func(ctx context.Context) []Inner {
-		return []Inner{Inner{}}
-	})
-
-	nested := schema.Object("expensive", Expensive{})
-	nested.FieldFunc("expensives", func(ctx context.Context) []Expensive {
-		return []Expensive{Expensive{}}
-	})
-
-	nested.FieldFunc("err", func() error {
-		return errors.New("no good, bad")
-	})
-
 	builtSchema := schema.MustBuild()
+
+	q2 := graphql.MustParse(`
+		{
+			inner(enumField: firstField)
+		}
+		`, nil)
+	if err := graphql.PrepareQuery(builtSchema.Query, q2.SelectionSet); err != nil {
+		t.Error(err)
+	}
+
+	q3 := graphql.MustParse(`
+		{
+			inner2(enumField2: this)
+		}
+		`, nil)
+	if err := graphql.PrepareQuery(builtSchema.Query, q3.SelectionSet); err != nil {
+		t.Error(err)
+	}
+
+	q4 := graphql.MustParse(`
+		{
+			inner(enumField: wrongField)
+		}
+		`, nil)
+	if err := graphql.PrepareQuery(builtSchema.Query, q4.SelectionSet); err == nil {
+		t.Error(err)
+	}
 
 	q := graphql.MustParse(`
 		{
 			inner { inners { expensive { expensives { err } } } }
-        }`, nil)
+	    }`, nil)
 
 	if err := graphql.PrepareQuery(builtSchema.Query, q.SelectionSet); err != nil {
 		t.Error(err)
 	}
 
 	e := graphql.Executor{}
-	_, err := e.Execute(context.Background(), builtSchema.Query, nil, q)
-	if err == nil || err.Error() != "inner.inners.0.expensive.expensives.0.err: no good, bad" {
-		t.Errorf("bad error: %v", err)
-	}
+	val, err := e.Execute(context.Background(), builtSchema.Query, nil, q2)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]interface{}{
+		"inner": enumType(1),
+	}, val)
 
-	q = graphql.MustParse(`
-		{
-			safe
-		}`, nil)
+	e2 := graphql.Executor{}
+	val, err = e2.Execute(context.Background(), builtSchema.Query, nil, q3)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]interface{}{
+		"inner2": enumType2(1.2),
+	}, val)
+	// if err != nil || val != int32(1) {
+	// 	t.Errorf("bad error: %v %v", err, val)
+	// }
 
-	if err := graphql.PrepareQuery(builtSchema.Query, q.SelectionSet); err != nil {
-		t.Error(err)
-	}
+	// q = graphql.MustParse(`
+	// 	{
+	// 		safe
+	// 	}`, nil)
 
-	e = graphql.Executor{}
-	_, err = e.Execute(context.Background(), builtSchema.Query, nil, q)
-	if err == nil || err.Error() != "safe safe" {
-		t.Errorf("bad error: %v", err)
-	}
-	if _, ok := err.(graphql.SanitizedError); !ok {
-		t.Errorf("safe not safe")
-	}
+	// if err := graphql.PrepareQuery(builtSchema.Query, q.SelectionSet); err != nil {
+	// 	t.Error(err)
+	// }
+
+	// e = graphql.Executor{}
+	// _, err = e.Execute(context.Background(), builtSchema.Query, nil, q)
+	// if err == nil || err.Error() != "safe safe" {
+	// 	t.Errorf("bad error: %v", err)
+	// }
+	// if _, ok := err.(graphql.SanitizedError); !ok {
+	// 	t.Errorf("safe not safe")
+	// }
 
 }
 

@@ -20,10 +20,12 @@ type Root struct {
 	Bytes []byte
 	Alias alias
 }
+type userEnum int64
 
 type User struct {
-	Name string `graphql:",key"`
-	Age  int
+	Name   string `graphql:",key"`
+	Age    int
+	userID userEnum
 }
 
 type WeirdKey struct {
@@ -42,6 +44,11 @@ func TestExecuteGood(t *testing.T) {
 			{Name: "Alice", Age: 10},
 			{Name: "Bob", Age: 20},
 		}
+	})
+	query.RegEnum("userID", map[string]interface{}{
+		"first":  1,
+		"second": 2,
+		"third":  3,
 	})
 	query.FieldFunc("optional", func(args struct{ X *int64 }) int64 {
 		if args.X != nil {
@@ -318,7 +325,7 @@ func testArgParseBad(t *testing.T, p *argParser, input interface{}) {
 }
 
 func TestArgParser(t *testing.T) {
-	parser, _, err := makeArgParser(reflect.TypeOf(kitchenSinkArgs{}))
+	parser, _, err := makeArgParser(reflect.TypeOf(kitchenSinkArgs{}), map[string]map[string]interface{}{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -459,15 +466,15 @@ func TestArgParser(t *testing.T) {
 		}
 	`))
 
-	if _, _, err := makeArgParser(reflect.TypeOf(&duplicate{})); err == nil {
+	if _, _, err := makeArgParser(reflect.TypeOf(&duplicate{}), map[string]map[string]interface{}{}); err == nil {
 		t.Error("expected duplicate fields to fail")
 	}
 
-	if _, _, err := makeArgParser(reflect.TypeOf(&anonymous{})); err == nil {
+	if _, _, err := makeArgParser(reflect.TypeOf(&anonymous{}), map[string]map[string]interface{}{}); err == nil {
 		t.Error("expected anonymous fields to fail")
 	}
 
-	if _, _, err := makeArgParser(reflect.TypeOf(&unsupported{})); err == nil {
+	if _, _, err := makeArgParser(reflect.TypeOf(&unsupported{}), map[string]map[string]interface{}{}); err == nil {
 		t.Error("expected unsupported fields to fail")
 	}
 }

@@ -1,0 +1,311 @@
+{
+  "__schema": {
+    "directives": [],
+    "mutationType": {
+      "name": "Mutation"
+    },
+    "queryType": {
+      "name": "Query"
+    },
+    "types": [
+      {
+        "description": "",
+        "enumValues": [],
+        "fields": [
+          {
+            "args": [],
+            "deprecationReason": "",
+            "description": "",
+            "isDeprecated": false,
+            "name": "sayHi",
+            "type": {
+              "kind": "NON_NULL",
+              "name": "",
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "bool",
+                "ofType": null
+              }
+            }
+          }
+        ],
+        "inputFields": [],
+        "interfaces": [],
+        "kind": "OBJECT",
+        "name": "Mutation",
+        "possibleTypes": []
+      },
+      {
+        "description": "",
+        "enumValues": [],
+        "fields": [
+          {
+            "args": [],
+            "deprecationReason": "",
+            "description": "",
+            "isDeprecated": false,
+            "name": "me",
+            "type": {
+              "kind": "NON_NULL",
+              "name": "",
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "User",
+                "ofType": null
+              }
+            }
+          },
+          {
+            "args": [],
+            "deprecationReason": "",
+            "description": "",
+            "isDeprecated": false,
+            "name": "noone",
+            "type": {
+              "kind": "NON_NULL",
+              "name": "",
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "User",
+                "ofType": null
+              }
+            }
+          },
+          {
+            "args": [],
+            "deprecationReason": "",
+            "description": "",
+            "isDeprecated": false,
+            "name": "nullableUser",
+            "type": {
+              "kind": "OBJECT",
+              "name": "User",
+              "ofType": null
+            }
+          },
+          {
+            "args": [],
+            "deprecationReason": "",
+            "description": "",
+            "isDeprecated": false,
+            "name": "viewer",
+            "type": {
+              "kind": "NON_NULL",
+              "name": "",
+              "ofType": {
+                "kind": "OBJECT",
+                "name": "User",
+                "ofType": null
+              }
+            }
+          }
+        ],
+        "inputFields": [],
+        "interfaces": [],
+        "kind": "OBJECT",
+        "name": "Query",
+        "possibleTypes": []
+      },
+      {
+        "description": "",
+        "enumValues": [],
+        "fields": [
+          {
+            "args": [],
+            "deprecationReason": "",
+            "description": "",
+            "isDeprecated": false,
+            "name": "friends",
+            "type": {
+              "kind": "NON_NULL",
+              "name": "",
+              "ofType": {
+                "kind": "LIST",
+                "name": "",
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": "",
+                  "ofType": {
+                    "kind": "OBJECT",
+                    "name": "User",
+                    "ofType": null
+                  }
+                }
+              }
+            }
+          },
+          {
+            "args": [
+              {
+                "defaultValue": null,
+                "description": "",
+                "name": "enumfield",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": "",
+                  "ofType": {
+                    "kind": "ENUM",
+                    "name": "enumType",
+                    "ofType": null
+                  }
+                }
+              },
+              {
+                "defaultValue": null,
+                "description": "",
+                "name": "include",
+                "type": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "User_InputObject",
+                  "ofType": null
+                }
+              },
+              {
+                "defaultValue": null,
+                "description": "",
+                "name": "other",
+                "type": {
+                  "kind": "NON_NULL",
+                  "name": "",
+                  "ofType": {
+                    "kind": "SCALAR",
+                    "name": "string",
+                    "ofType": null
+                  }
+                }
+              }
+            ],
+            "deprecationReason": "",
+            "description": "",
+            "isDeprecated": false,
+            "name": "greet",
+            "type": {
+              "kind": "NON_NULL",
+              "name": "",
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "string",
+                "ofType": null
+              }
+            }
+          },
+          {
+            "args": [],
+            "deprecationReason": "",
+            "description": "",
+            "isDeprecated": false,
+            "name": "maybeAge",
+            "type": {
+              "kind": "SCALAR",
+              "name": "int64",
+              "ofType": null
+            }
+          },
+          {
+            "args": [],
+            "deprecationReason": "",
+            "description": "",
+            "isDeprecated": false,
+            "name": "name",
+            "type": {
+              "kind": "NON_NULL",
+              "name": "",
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "string",
+                "ofType": null
+              }
+            }
+          }
+        ],
+        "inputFields": [],
+        "interfaces": [],
+        "kind": "OBJECT",
+        "name": "User",
+        "possibleTypes": []
+      },
+      {
+        "description": "",
+        "enumValues": [],
+        "fields": [],
+        "inputFields": [
+          {
+            "defaultValue": null,
+            "description": "",
+            "name": "maybeAge",
+            "type": {
+              "kind": "SCALAR",
+              "name": "int64",
+              "ofType": null
+            }
+          },
+          {
+            "defaultValue": null,
+            "description": "",
+            "name": "name",
+            "type": {
+              "kind": "NON_NULL",
+              "name": "",
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "string",
+                "ofType": null
+              }
+            }
+          }
+        ],
+        "interfaces": [],
+        "kind": "INPUT_OBJECT",
+        "name": "User_InputObject",
+        "possibleTypes": []
+      },
+      {
+        "description": "",
+        "enumValues": [],
+        "fields": [],
+        "inputFields": [],
+        "interfaces": [],
+        "kind": "SCALAR",
+        "name": "bool",
+        "possibleTypes": []
+      },
+      {
+        "description": "",
+        "enumValues": [
+          {
+            "deprecationReason": "",
+            "description": "",
+            "isDeprecated": false,
+            "name": "random"
+          }
+        ],
+        "fields": [],
+        "inputFields": [],
+        "interfaces": [],
+        "kind": "ENUM",
+        "name": "enumType",
+        "possibleTypes": []
+      },
+      {
+        "description": "",
+        "enumValues": [],
+        "fields": [],
+        "inputFields": [],
+        "interfaces": [],
+        "kind": "SCALAR",
+        "name": "int64",
+        "possibleTypes": []
+      },
+      {
+        "description": "",
+        "enumValues": [],
+        "fields": [],
+        "inputFields": [],
+        "interfaces": [],
+        "kind": "SCALAR",
+        "name": "string",
+        "possibleTypes": []
+      }
+    ]
+  }
+}
