@@ -74,6 +74,7 @@ func TestComputeSchemaJSON(t *testing.T) {
 		ioutil.WriteFile("test-schema.json", actualBytes, 0644)
 	}
 
+	ioutil.WriteFile("test-schema2.json", actualBytes, 0644)
 	expectedBytes, err := ioutil.ReadFile("test-schema.json")
 	if err != nil {
 		t.Fatal(err)

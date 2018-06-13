@@ -780,7 +780,8 @@ type Schema struct {
 	EnumTypes map[reflect.Type]map[string]interface{}
 }
 
-func (s *Schema) RegEnum(typ reflect.Type, enumMap map[string]interface{}) { //could be a type or a value
+func (s *Schema) EnumReg(val interface{}, enumMap map[string]interface{}) { //could be a type or a value
+	typ := reflect.TypeOf(val)
 	if s.EnumTypes == nil {
 		s.EnumTypes = make(map[reflect.Type]map[string]interface{})
 	}

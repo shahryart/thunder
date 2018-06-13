@@ -30,19 +30,17 @@ func TestPathError(t *testing.T) {
 
 	type enumType int32
 	type enumType2 float64
-	var enumVar enumType
-	var enumVar2 enumType2
 
-	schema.RegEnum(reflect.TypeOf(enumVar), map[string]interface{}{
-		"firstField":  int32(1),
-		"secondField": int32(2),
-		"thirdField":  int32(3),
+	schema.EnumReg(enumType(1), map[string]interface{}{
+		"firstField":  enumType(1),
+		"secondField": enumType(2),
+		"thirdField":  enumType(3),
 	})
-	schema.RegEnum(reflect.TypeOf(enumVar2), map[string]interface{}{
-		"this": float64(1.2),
-		"is":   float64(3.2),
-		"a":    float64(4.3),
-		"map":  float64(5.3),
+	schema.EnumReg(enumType2(1.2), map[string]interface{}{
+		"this": enumType2(1.2),
+		"is":   enumType2(3.2),
+		"a":    enumType2(4.3),
+		"map":  enumType2(5.3),
 	})
 
 	query := schema.Query()
