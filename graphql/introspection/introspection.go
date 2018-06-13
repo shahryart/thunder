@@ -97,6 +97,8 @@ func (s *introspection) registerType(schema *schemabuilder.Schema) {
 			return OBJECT
 		case *graphql.Scalar:
 			return SCALAR
+		case *graphql.Enum:
+			return ENUM
 		case *graphql.List:
 			return LIST
 		case *graphql.InputObject:
@@ -113,6 +115,8 @@ func (s *introspection) registerType(schema *schemabuilder.Schema) {
 		case *graphql.Object:
 			return t.Name
 		case *graphql.Scalar:
+			return t.Type
+		case *graphql.Enum:
 			return t.Type
 		case *graphql.InputObject:
 			return t.Name
@@ -228,6 +232,12 @@ func collectTypes(typ graphql.Type, types map[string]graphql.Type) {
 		collectTypes(typ.Type, types)
 
 	case *graphql.Scalar:
+		if _, ok := types[typ.Type]; ok {
+			return
+		}
+		types[typ.Type] = typ
+
+	case *graphql.Enum:
 		if _, ok := types[typ.Type]; ok {
 			return
 		}

@@ -24,27 +24,37 @@ type User struct {
 
 type Slow struct {
 }
-type enumFieldType int32
 
 func TestPathError(t *testing.T) {
 	schema := schemabuilder.NewSchema()
 
-	type Inner struct {
-		enumField enumFieldType
-	}
-
 	type enumType int32
-	query := schema.Query()
+	type enumType2 float64
 	var enumVar enumType
+	var enumVar2 enumType2
+
+	schema.RegEnum(reflect.TypeOf(enumVar), map[string]interface{}{
+		"firstField":  int32(1),
+		"secondField": int32(2),
+		"thirdField":  int32(3),
+	})
+	schema.RegEnum(reflect.TypeOf(enumVar2), map[string]interface{}{
+		"this": float64(1.2),
+		"is":   float64(3.2),
+		"a":    float64(4.3),
+		"map":  float64(5.3),
+	})
+
+	query := schema.Query()
 	query.FieldFunc("inner", func(args struct {
 		EnumField enumType //will be parsed as the type that gets passed in here
 	}) enumType {
 		return args.EnumField
 	})
-	schema.RegEnum(reflect.TypeOf(enumVar), map[string]interface{}{
-		"firstField":  int32(1),
-		"secondField": int32(2),
-		"thirdField":  int32(3),
+	query.FieldFunc("inner2", func(args struct {
+		EnumField2 enumType2
+	}) enumType2 {
+		return args.EnumField2
 	})
 	query.FieldFunc("safe", func() error {
 		return graphql.NewSafeError("safe safe")
@@ -65,6 +75,24 @@ func TestPathError(t *testing.T) {
 		t.Error(err)
 	}
 
+	q3 := graphql.MustParse(`
+		{
+			inner2(enumField2: this)
+		}
+		`, nil)
+	if err := graphql.PrepareQuery(builtSchema.Query, q3.SelectionSet); err != nil {
+		t.Error(err)
+	}
+
+	q4 := graphql.MustParse(`
+		{
+			inner(enumField: wrongField)
+		}
+		`, nil)
+	if err := graphql.PrepareQuery(builtSchema.Query, q4.SelectionSet); err == nil {
+		t.Error(err)
+	}
+
 	// q := graphql.MustParse(`
 	// 	{
 	// 		inner { inners { expensive { expensives { err } } } }
@@ -79,6 +107,13 @@ func TestPathError(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, map[string]interface{}{
 		"inner": enumType(1),
+	}, val)
+
+	e2 := graphql.Executor{}
+	val, err = e2.Execute(context.Background(), builtSchema.Query, nil, q3)
+	assert.Nil(t, err)
+	assert.Equal(t, map[string]interface{}{
+		"inner2": enumType2(1.2),
 	}, val)
 	// if err != nil || val != int32(1) {
 	// 	t.Errorf("bad error: %v %v", err, val)

@@ -20,12 +20,21 @@ type Scalar struct {
 	Type string
 }
 
-//enum type here
-
 func (s *Scalar) isType() {}
 
 func (s *Scalar) String() string {
 	return s.Type
+}
+
+//Enum is a leaf value
+type Enum struct {
+	Type string
+}
+
+func (e *Enum) isType() {}
+
+func (e *Enum) String() string {
+	return e.Type
 }
 
 // Object is a value with several fields
