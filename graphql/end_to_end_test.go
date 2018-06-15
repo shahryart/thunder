@@ -2,6 +2,7 @@ package graphql_test
 
 import (
 	"context"
+	"errors"
 	"reflect"
 	"sync"
 	"testing"
@@ -42,13 +43,30 @@ func TestPathError(t *testing.T) {
 		"a":    enumType2(4.3),
 		"map":  enumType2(5.3),
 	})
+	type Inner struct{}
 
 	query := schema.Query()
 	query.FieldFunc("inner", func(args struct {
-		EnumField enumType //will be parsed as the type that gets passed in here
+		EnumField enumType
 	}) enumType {
 		return args.EnumField
 	})
+
+	inner := schema.Object("innerOrig", Inner{})
+
+	query.FieldFunc("innerOrig", func() Inner {
+		return Inner{}
+	})
+
+	inner.FieldFunc("inners", func(ctx context.Context) []Inner {
+		return []Inner{Inner{}}
+	})
+
+	type Expensive struct{}
+	inner.FieldFunc("expensive", func(ctx context.Context) Expensive {
+		return Expensive{}
+	})
+
 	query.FieldFunc("inner2", func(args struct {
 		EnumField2 enumType2
 	}) enumType2 {
@@ -60,7 +78,13 @@ func TestPathError(t *testing.T) {
 
 	_ = schema.Mutation()
 
-	type Expensive struct{}
+	nested := schema.Object("expensive", Expensive{})
+	nested.FieldFunc("expensives", func(ctx context.Context) []Expensive {
+		return []Expensive{Expensive{}}
+	})
+	nested.FieldFunc("err", func() error {
+		return errors.New("no good, bad")
+	})
 
 	builtSchema := schema.MustBuild()
 
@@ -93,7 +117,7 @@ func TestPathError(t *testing.T) {
 
 	q := graphql.MustParse(`
 		{
-			inner { inners { expensive { expensives { err } } } }
+			innerOrig { inners { expensive { expensives { err } } } }
 	    }`, nil)
 
 	if err := graphql.PrepareQuery(builtSchema.Query, q.SelectionSet); err != nil {
