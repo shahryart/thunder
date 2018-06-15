@@ -28,13 +28,18 @@ func (s *Scalar) String() string {
 
 //Enum is a leaf value
 type Enum struct {
-	Type string
+	Type   string
+	Values []string
 }
 
 func (e *Enum) isType() {}
 
 func (e *Enum) String() string {
 	return e.Type
+}
+
+func (e *Enum) enumValues() []string {
+	return e.Values
 }
 
 // Object is a value with several fields
@@ -90,6 +95,7 @@ var _ Type = &Object{}
 var _ Type = &List{}
 var _ Type = &InputObject{}
 var _ Type = &NonNull{}
+var _ Type = &Enum{}
 
 // A Resolver calculates the value of a field of an object
 type Resolver func(ctx context.Context, source, args interface{}, selectionSet *SelectionSet) (interface{}, error)
@@ -109,6 +115,7 @@ type Field struct {
 type Schema struct {
 	Query    Type
 	Mutation Type
+	Enums    []*Enum
 }
 
 // SelectionSet represents a core GraphQL query

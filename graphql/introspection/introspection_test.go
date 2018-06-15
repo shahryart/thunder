@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
-	"reflect"
 	"testing"
 
 	"github.com/samsarahq/thunder/graphql/introspection"
@@ -21,8 +20,8 @@ type enumType int32
 func makeSchema() *schemabuilder.Schema {
 	schema := schemabuilder.NewSchema()
 	var enumField enumType
-	schema.RegEnum(reflect.TypeOf(enumField), map[string]interface{}{
-		"random": 1,
+	schema.EnumReg(enumField, map[string]interface{}{
+		"random": enumType(1),
 	})
 	query := schema.Query()
 	query.FieldFunc("me", func() User {
@@ -82,7 +81,7 @@ func TestComputeSchemaJSON(t *testing.T) {
 	var expected map[string]interface{}
 	json.Unmarshal(expectedBytes, &expected)
 
-	if !reflect.DeepEqual(expected, actual) {
-		t.Errorf("schema JSONs do not match:\n---expected---\n%+v\n---actual---\n%+v", expected, actual)
-	}
+	//if !reflect.DeepEqual(expected, actual) {
+	t.Errorf("schema JSONs do not match:\n---expected---\n%+v\n---actual---\n%+v", expected, actual)
+	//}
 }

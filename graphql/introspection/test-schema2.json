@@ -271,7 +271,14 @@
       },
       {
         "description": "",
-        "enumValues": [],
+        "enumValues": [
+          {
+            "deprecationReason": "",
+            "description": "",
+            "isDeprecated": false,
+            "name": "random"
+          }
+        ],
         "fields": [],
         "inputFields": [],
         "interfaces": [],

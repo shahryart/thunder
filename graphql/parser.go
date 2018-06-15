@@ -1,7 +1,6 @@
 package graphql
 
 import (
-	"log"
 	"reflect"
 	"strconv"
 
@@ -416,7 +415,6 @@ func Parse(source string, vars map[string]interface{}) (*Query, error) {
 			if err != nil {
 				return rv, NewClientError("failed to parse default value: %s", err.Error())
 			}
-			log.Println(name, val)
 			defaultedVars[name] = val
 		}
 	}

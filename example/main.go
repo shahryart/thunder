@@ -68,8 +68,8 @@ func (s *Server) registerMessage(schema *schemabuilder.Schema) {
 		return result, nil
 	})
 }
-
 func (s *Server) registerQuery(schema *schemabuilder.Schema) {
+
 	object := schema.Query()
 
 	object.FieldFunc("messages", func(ctx context.Context) ([]*Message, error) {
@@ -84,8 +84,11 @@ func (s *Server) registerQuery(schema *schemabuilder.Schema) {
 func (s *Server) registerMutation(schema *schemabuilder.Schema) {
 	object := schema.Mutation()
 
-	object.FieldFunc("addMessage", func(ctx context.Context, args struct{ Text string }) error {
-		_, err := s.db.InsertRow(ctx, &Message{Text: args.Text})
+	object.FieldFunc("addMessage", func(ctx context.Context, args struct {
+		Text      string
+		EnumField messageEnumType
+	}) error {
+		_, err := s.db.InsertRow(ctx, &Message{Text: args.Text, messageEnum: args.EnumField})
 		return err
 	})
 
@@ -121,6 +124,7 @@ func (s *Server) Schema() *graphql.Schema {
 
 func main() {
 	sqlgenSchema := sqlgen.NewSchema()
+
 	sqlgenSchema.MustRegisterType("messages", sqlgen.AutoIncrement, Message{})
 	sqlgenSchema.MustRegisterType("reaction_instances", sqlgen.AutoIncrement, ReactionInstance{})
 
