@@ -115,7 +115,6 @@ type Field struct {
 type Schema struct {
 	Query    Type
 	Mutation Type
-	Enums    []*Enum
 }
 
 // SelectionSet represents a core GraphQL query

@@ -3,7 +3,6 @@ package introspection
 import (
 	"context"
 	"encoding/json"
-	"log"
 	"sort"
 
 	"github.com/samsarahq/thunder/graphql"
@@ -14,7 +13,6 @@ type introspection struct {
 	types    map[string]graphql.Type
 	query    graphql.Type
 	mutation graphql.Type
-	enums    []*graphql.Enum
 }
 
 type DirectiveLocation string
@@ -60,13 +58,6 @@ type EnumValue struct {
 }
 
 func (s *introspection) registerEnumValue(schema *schemabuilder.Schema) {
-	// log.Println("registers enum values")
-	// for _, enum := range s.enums {
-	// 	for _, value := range enum.Values {
-	// 		log.Println("registering enum value", value)
-	// 		schema.Object("__EnumValue", EnumValue{Name: value, Description: "", IsDeprecated: false, DeprecationReason: ""})
-	//}
-	//}
 	schema.Object("__EnumValue", EnumValue{})
 }
 
@@ -98,7 +89,6 @@ type Type struct {
 }
 
 func (s *introspection) registerType(schema *schemabuilder.Schema) {
-	log.Println("types are registeredd")
 	object := schema.Object("__Type", Type{})
 	object.FieldFunc("kind", func(t Type) TypeKind {
 		switch t.Inner.(type) {
@@ -206,22 +196,14 @@ func (s *introspection) registerType(schema *schemabuilder.Schema) {
 	object.FieldFunc("enumValues", func(t Type, args struct {
 		IncludeDeprecated *bool
 	}) []EnumValue {
-		// switch t.Inner.(type) {
-		// case *graphql.Enum:
-		// 	enumVals := make([]EnumValue, 1)
-		// 	enumVals[0] = EnumValue{Name: "hello", Description: "", IsDeprecated: false, DeprecationReason: ""}
-		// 	return enumVals
-		//}
 
 		switch t := t.Inner.(type) {
 		case *graphql.Enum:
-
 			var enumVals []EnumValue
 			for _, v := range t.Values {
 				enumVals = append(enumVals,
 					EnumValue{Name: v, Description: "", IsDeprecated: false, DeprecationReason: ""})
 			}
-			log.Println("enumVals", enumVals)
 			return enumVals
 		}
 		return nil
@@ -335,12 +317,10 @@ func AddIntrospectionToSchema(schema *graphql.Schema) {
 	types := make(map[string]graphql.Type)
 	collectTypes(schema.Query, types)
 	collectTypes(schema.Mutation, types)
-	log.Println("lenght of the schema enums ", len(schema.Enums))
 	is := &introspection{
 		types:    types,
 		query:    schema.Query,
 		mutation: schema.Mutation,
-		enums:    schema.Enums,
 	}
 	isSchema := is.schema()
 

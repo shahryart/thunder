@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"log"
 	"reflect"
 	"sort"
 	"strings"
@@ -857,19 +856,10 @@ func (s *Schema) Build() (*graphql.Schema, error) {
 	if err != nil {
 		return nil, err
 	}
-	var enumArr []*graphql.Enum
-	for refType, graphqlTyp := range sb.types {
-		log.Println("iter through typ", refType)
-		if _, _, ok := sb.getEnum(refType); ok {
-			log.Println("is enum type")
-			enumArr = append(enumArr, graphqlTyp.(*graphql.Enum))
-		}
-	}
 
 	return &graphql.Schema{
 		Query:    queryTyp,
 		Mutation: mutationTyp,
-		Enums:    enumArr,
 	}, nil
 }
 
